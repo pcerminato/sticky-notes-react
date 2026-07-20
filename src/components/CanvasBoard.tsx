@@ -13,6 +13,7 @@ import {
   DELETE_ZONE_SIZE,
   RESIZE_HANDLE_SIZE,
   BORDER_COLOR,
+  TEXT_COLOR,
   LOCAL_STORAGE_KEY,
 } from "../constants";
 import { useCanvas, useLocalStorage, useWindowResize } from "../hooks";
@@ -22,6 +23,7 @@ const CONFIG: Config = {
   resizeHandleSize: RESIZE_HANDLE_SIZE,
   deleteZoneSize: DELETE_ZONE_SIZE,
   defaultBorderColor: BORDER_COLOR,
+  textColor: TEXT_COLOR,
 };
 
 export const CanvasBoard: React.FC = () => {

@@ -12,6 +12,7 @@ export interface Config {
   resizeHandleSize: number;
   deleteZoneSize: number;
   defaultBorderColor: string;
+  textColor: string;
 }
 
 export type Coordinates = {

@@ -57,7 +57,7 @@ export const useCanvas = ({
 
         if (note.text) {
           // Draws the text
-          ctx.fillStyle = "#FFFFFF";
+          ctx.fillStyle = config.textColor;
           ctx.font = "15px sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
@@ -118,7 +118,7 @@ export const useCanvas = ({
 
       ctx.fillStyle = isHovered
         ? "rgba(220, 20, 60, 0.8)"
-        : "rgba(0, 0, 0, 0.1)";
+        : "rgba(0, 0, 0, 0.4)";
       ctx.fillRect(
         canvas.width - currentConfig.deleteZoneSize,
         canvas.height - currentConfig.deleteZoneSize,
@@ -126,7 +126,6 @@ export const useCanvas = ({
         currentConfig.deleteZoneSize,
       );
 
-      ctx.fillStyle = isHovered ? "#FFFFFF" : "rgba(0, 0, 0, 0.4)";
       ctx.font = isHovered ? "bold 20px sans-serif" : "16px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
