@@ -11,3 +11,4 @@ export const COLORS = [
   "#eaefe5",
 ];
 export const DELETE_ZONE_SIZE = 80;
+export const LOCAL_STORAGE_KEY = "notes-storage";

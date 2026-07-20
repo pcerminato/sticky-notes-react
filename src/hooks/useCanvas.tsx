@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
-import type { Note, Interaction, Config } from "./types";
-import { isOverDeleteZone } from "./utils/cursor";
+import type { Note, Interaction, Config } from "../types";
+import { isOverDeleteZone } from "../utils/cursor";
 
 interface UseCanvasParams {
   canvasRef: RefObject<HTMLCanvasElement | null>;

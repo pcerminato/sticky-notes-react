@@ -1,6 +1,5 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { Note, Interaction, Config, Coordinates } from "./types";
-import { useCanvas } from "./useCanvas";
 import {
   getClickCoordinates,
   clickIsOverResizeHandle,
@@ -13,7 +12,9 @@ import {
   DELETE_ZONE_SIZE,
   RESIZE_HANDLE_SIZE,
   BORDER_COLOR,
+  LOCAL_STORAGE_KEY,
 } from "./constants";
+import { useCanvas, useLocalStorage, useWindowResize } from "./hooks";
 
 const CONFIG: Config = {
   resizeHandleSize: RESIZE_HANDLE_SIZE,
@@ -30,24 +31,26 @@ export const CanvasBoard: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [interaction, setInteraction] = useState<Interaction>({ type: "idle" });
+  const [saveToLocalStorage, readFromLocalStorage] =
+    useLocalStorage<Note[]>(LOCAL_STORAGE_KEY);
 
   useCanvas({ canvasRef, notes, interaction, config: CONFIG });
 
   // Update canvas pixel dimensions on start and cache bounds.
-  useLayoutEffect(() => {
-    const handleResize = () => {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        // Cache the layout geometry bounds
-        boundsRef.current = canvas.getBoundingClientRect();
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    handleResize();
-    return () => window.removeEventListener("resize", handleResize);
+  useWindowResize({ canvasRef, boundsRef });
+
+  useEffect(() => {
+    const data = readFromLocalStorage();
+    if (data) {
+      setNotes(data);
+    }
   }, []);
+
+  useEffect(() => {
+    if (interaction.type === "idle") {
+      saveToLocalStorage(notes);
+    }
+  }, [notes, interaction]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -82,7 +85,6 @@ export const CanvasBoard: React.FC = () => {
         break;
       }
 
-      // Re-using Note structure shapes safely since they contain x, y, width, height
       if (clickIsOverArea(cursor, note)) {
         setInteraction({
           type: "dragging",
@@ -105,7 +107,7 @@ export const CanvasBoard: React.FC = () => {
       });
       setNotes([...notes, newNote]);
       /* Note: "dragging" is set as the default interaction on note creation. 
-      Why? So you can create & drag on one single mosedown stroke */
+      Why? So you can create & drag on a single mosedown stroke */
       setInteraction({
         type: "dragging",
         note: newNote,
