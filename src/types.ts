@@ -5,6 +5,7 @@ export interface Note {
   width: number;
   height: number;
   color: string;
+  text?: string;
 }
 
 export interface Config {
@@ -40,10 +41,15 @@ export interface ResizeAction {
   initCursor: { x: number; y: number };
 }
 
+export interface EditAction {
+  type: "editing";
+  noteId: string;
+}
+
 export interface IdleAction {
   type: "idle";
 }
 
-export type Interaction = DragAction | ResizeAction | IdleAction;
+export type Interaction = DragAction | ResizeAction | EditAction | IdleAction;
 
 /* <<< Action types */

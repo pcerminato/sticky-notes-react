@@ -1,7 +1,0 @@
-canvas.canvas-board {
-  display: block;
-  width: 100vw;
-  height: 100vh;
-  image-rendering: pixelated;
-  background-color: #faebd7;
-}

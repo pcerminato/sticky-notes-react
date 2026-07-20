@@ -1,5 +1,4 @@
-import "./App.css";
-import { CanvasBoard } from "./CanvasBoard";
+import { CanvasBoard } from "./components";
 
 function App() {
   return <CanvasBoard />;

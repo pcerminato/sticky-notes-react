@@ -55,6 +55,33 @@ export const useCanvas = ({
         ctx.fillStyle = note.color;
         ctx.fillRect(note.x, note.y, note.width, note.height);
 
+        if (note.text) {
+          // Draws the text
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = "15px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+
+          // Calculate center of the note card
+          const centerX = note.x + note.width / 2;
+          const centerY = note.y + note.height / 2;
+
+          // Truncate text with ellipsis if it overflows the note box width safely
+          const maxTextWidth = note.width - 20;
+          let textToDraw = note.text;
+          if (ctx.measureText(textToDraw).width > maxTextWidth) {
+            while (
+              textToDraw.length > 0 &&
+              ctx.measureText(textToDraw + "...").width > maxTextWidth
+            ) {
+              textToDraw = textToDraw.slice(0, -1);
+            }
+            textToDraw += "...";
+          }
+
+          ctx.fillText(textToDraw, centerX, centerY);
+        }
+
         ctx.fillStyle = currentConfig.defaultBorderColor;
         ctx.fillRect(
           note.x + note.width - currentConfig.resizeHandleSize,

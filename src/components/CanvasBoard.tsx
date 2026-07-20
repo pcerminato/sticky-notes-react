@@ -1,20 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { Note, Interaction, Config, Coordinates } from "./types";
+import styles from "./CanvasBoard.module.css";
+import type { Note, Interaction, Config, Coordinates } from "../types";
 import {
   getClickCoordinates,
   clickIsOverResizeHandle,
   clickIsOverArea,
   isOverDeleteZone,
-} from "./utils/cursor";
-import { assertNever } from "./utils/assertNever";
-import { createNote } from "./utils/createNote";
+} from "../utils/cursor";
+import { assertNever } from "../utils/assertNever";
+import { createNote } from "../utils/createNote";
 import {
   DELETE_ZONE_SIZE,
   RESIZE_HANDLE_SIZE,
   BORDER_COLOR,
   LOCAL_STORAGE_KEY,
-} from "./constants";
-import { useCanvas, useLocalStorage, useWindowResize } from "./hooks";
+} from "../constants";
+import { useCanvas, useLocalStorage, useWindowResize } from "../hooks";
+import { TextInput } from ".";
 
 const CONFIG: Config = {
   resizeHandleSize: RESIZE_HANDLE_SIZE,
@@ -33,6 +35,11 @@ export const CanvasBoard: React.FC = () => {
   const [interaction, setInteraction] = useState<Interaction>({ type: "idle" });
   const [saveToLocalStorage, readFromLocalStorage] =
     useLocalStorage<Note[]>(LOCAL_STORAGE_KEY);
+
+  const activeEditingNote =
+    interaction.type === "editing"
+      ? notes.find((n) => n.id === interaction.noteId)
+      : null;
 
   useCanvas({ canvasRef, notes, interaction, config: CONFIG });
 
@@ -53,6 +60,9 @@ export const CanvasBoard: React.FC = () => {
   }, [notes, interaction]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (interaction.type === "editing") {
+      return;
+    }
     const canvas = canvasRef.current;
     const bounds = boundsRef.current;
     if (!canvas || !bounds) return;
@@ -129,6 +139,7 @@ export const CanvasBoard: React.FC = () => {
 
     switch (interaction.type) {
       case "idle":
+      case "editing":
         break;
       case "resizing": {
         const rangeX = cursor.x - interaction.initCursor.x;
@@ -181,10 +192,16 @@ export const CanvasBoard: React.FC = () => {
         if (shouldDelete) {
           setNotes(notes.filter((n) => n.id !== interaction.note.id));
         }
+
+        setInteraction({ type: "idle" });
+
         break;
       }
 
       case "resizing":
+        setInteraction({ type: "idle" });
+        break;
+      case "editing":
       case "idle":
         break;
       default: {
@@ -195,14 +212,58 @@ export const CanvasBoard: React.FC = () => {
     setInteraction({ type: "idle" });
   };
 
+  const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const bounds = boundsRef.current;
+    if (!canvas || !bounds) return;
+
+    const cursor = getClickCoordinates(canvas, e.nativeEvent, bounds);
+
+    for (let i = notes.length - 1; i >= 0; i--) {
+      const note = notes[i];
+      if (clickIsOverArea(cursor, note)) {
+        setInteraction({ type: "editing", noteId: note.id });
+        break;
+      }
+    }
+  };
+
+  const handleTextSave = (id: string, newText: string) => {
+    setNotes(notes.map((n) => (n.id === id ? { ...n, text: newText } : n)));
+    setInteraction({ type: "idle" });
+  };
+
+  const handleMouseLeave = () => {
+    if (interaction.type !== "editing") {
+      setInteraction({ type: "idle" });
+    }
+  };
+
   return (
-    <canvas
-      ref={canvasRef}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={() => setInteraction({ type: "idle" })}
-      className="canvas-board"
-    />
+    <div className={styles.container}>
+      <canvas
+        ref={canvasRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onDoubleClick={handleDoubleClick}
+        onMouseLeave={handleMouseLeave}
+        className={styles.canvasBoard}
+      />
+
+      {activeEditingNote && (
+        <TextInput
+          note={activeEditingNote}
+          boundsRef={boundsRef}
+          canvasRef={canvasRef}
+          onBlur={(e) => handleTextSave(activeEditingNote.id, e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter")
+              handleTextSave(activeEditingNote.id, e.currentTarget.value);
+            if (e.key === "Escape") setInteraction({ type: "idle" });
+          }}
+        />
+      )}
+    </div>
   );
 };

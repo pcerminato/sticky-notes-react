@@ -1,0 +1,16 @@
+div.container {
+  /* position: relative 
+    is crucial here so the absolute positioning of the TextInput works with precision on the screen 
+  */
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+canvas.canvasBoard {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  image-rendering: pixelated;
+  background-color: #faebd7;
+}
