@@ -1,7 +1,8 @@
 import "./App.css";
+import { CanvasBoard } from "./CanvasBoard";
 
 function App() {
-  return <canvas id="sticky-notes" />;
+  return <CanvasBoard />;
 }
 
 export default App;

@@ -1,7 +1,7 @@
-canvas#sticky-notes {
+canvas.canvas-board {
   display: block;
   width: 100vw;
   height: 100vh;
   image-rendering: pixelated;
-  background-color: rgb(248, 217, 217);
+  background-color: #faebd7;
 }
