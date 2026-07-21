@@ -1,0 +1,34 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`<CanvasBoard /> > should match the snapshot on initial mount 1`] = `
+<div>
+  <div
+    class="_container_bb7f5e"
+  >
+    <canvas
+      class="_canvasBoard_bb7f5e"
+    />
+  </div>
+</div>
+`;
+
+exports[`<CanvasBoard /> > should match the snapshot when a note enters editing mode 1`] = `
+<div>
+  <div
+    class="_container_bb7f5e"
+  >
+    <canvas
+      class="_canvasBoard_bb7f5e"
+      height="600"
+      width="800"
+    />
+    <input
+      class="_textInput_82cb4b"
+      data-testid="note-text-input"
+      style="left: 20px; top: 45px; width: 80px; outline: 2px solid green; background: green;"
+      type="text"
+      value="Hello"
+    />
+  </div>
+</div>
+`;
