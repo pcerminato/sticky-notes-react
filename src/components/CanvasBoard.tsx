@@ -39,16 +39,23 @@ export const CanvasBoard: React.FC = () => {
     () => readFromLocalStorage() || [],
   );
   const [interaction, setInteraction] = useState<Interaction>({ type: "idle" });
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const activeEditingNote =
     interaction.type === "editing"
       ? notes.find((n) => n.id === interaction.noteId)
       : null;
 
-  useCanvas({ canvasRef, notes, interaction, config: CONFIG });
-
   // Update canvas pixel dimensions on start and cache bounds.
-  useWindowResize({ canvasRef, boundsRef });
+  useWindowResize({
+    canvasRef,
+    boundsRef,
+    onWindowResize: ({ width, height }) => {
+      setCanvasSize({ width, height });
+    },
+  });
+
+  useCanvas({ canvasRef, notes, interaction, config: CONFIG, canvasSize });
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (interaction.type === "editing") {

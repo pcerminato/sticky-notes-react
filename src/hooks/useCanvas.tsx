@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import type { RefObject } from "react";
 import type { Note, Interaction, Config } from "../types";
 import { isOverDeleteZone } from "../utils/cursor";
@@ -8,6 +8,7 @@ interface UseCanvasParams {
   notes: Note[];
   interaction: Interaction;
   config: Config;
+  canvasSize: { width: number; height: number };
 }
 
 /* This hook keeps the drawing logic of the elements on the canvas */
@@ -16,42 +17,34 @@ export const useCanvas = ({
   notes,
   interaction,
   config,
+  canvasSize,
 }: UseCanvasParams) => {
-  /* To excell rendering performance, this hook uses the "latest ref patters" (https://www.epicreact.dev/the-latest-ref-pattern-in-react) */
-  const renderDataRef = useRef({ notes, interaction, config });
-
-  /* This use effect updates the reference on every re-render */
-  useEffect(() => {
-    renderDataRef.current = { notes, interaction, config };
-  }, [notes, interaction, config]);
-
   useEffect(() => {
     let animationFrameId: number;
+    let lastCalledTime = performance.now();
+    let fps = 0;
 
-    /* The render loop is a clouse but it access the fresh data from the renderDataRef, decoupled from React re-render cycles */
-    const renderLoop = () => {
+    const renderFrame = () => {
+      performance.mark("canvas-draw-start");
+
+      const delta = (performance.now() - lastCalledTime) / 1000;
+      lastCalledTime = performance.now();
+      fps = Math.round(1 / delta);
+
       const canvas = canvasRef.current;
       if (!canvas) {
-        animationFrameId = requestAnimationFrame(renderLoop);
         return;
       }
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        animationFrameId = requestAnimationFrame(renderLoop);
         return;
       }
-
-      const {
-        notes: currentNotes,
-        interaction: currentInteraction,
-        config: currentConfig,
-      } = renderDataRef.current;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Draws all the notes
-      currentNotes.forEach((note) => {
+      notes.forEach((note) => {
         ctx.fillStyle = note.color;
         ctx.fillRect(note.x, note.y, note.width, note.height);
 
@@ -82,22 +75,22 @@ export const useCanvas = ({
           ctx.fillText(textToDraw, centerX, centerY);
         }
 
-        ctx.fillStyle = currentConfig.defaultBorderColor;
+        ctx.fillStyle = config.defaultBorderColor;
         ctx.fillRect(
-          note.x + note.width - currentConfig.resizeHandleSize,
-          note.y + note.height - currentConfig.resizeHandleSize,
-          currentConfig.resizeHandleSize,
-          currentConfig.resizeHandleSize,
+          note.x + note.width - config.resizeHandleSize,
+          note.y + note.height - config.resizeHandleSize,
+          config.resizeHandleSize,
+          config.resizeHandleSize,
         );
 
         /* Highlights the active note */
         const isSelected =
-          (currentInteraction.type === "dragging" ||
-            currentInteraction.type === "resizing") &&
-          currentInteraction.note.id === note.id;
+          (interaction.type === "dragging" ||
+            interaction.type === "resizing") &&
+          interaction.note.id === note.id;
 
         if (isSelected) {
-          ctx.strokeStyle = currentConfig.defaultBorderColor;
+          ctx.strokeStyle = config.defaultBorderColor;
           ctx.lineWidth = 2;
           ctx.strokeRect(note.x, note.y, note.width, note.height);
         }
@@ -108,22 +101,22 @@ export const useCanvas = ({
        * The delete zone is always visible, but it is highlighted when hovered (dragging a note over it).
        */
       const isHovered =
-        currentInteraction.type === "dragging" &&
+        interaction.type === "dragging" &&
         isOverDeleteZone(
-          currentInteraction.note,
+          interaction.note,
           canvas.width,
           canvas.height,
-          currentConfig.deleteZoneSize,
+          config.deleteZoneSize,
         );
 
       ctx.fillStyle = isHovered
         ? "rgba(220, 20, 60, 0.8)"
         : "rgba(0, 0, 0, 0.4)";
       ctx.fillRect(
-        canvas.width - currentConfig.deleteZoneSize,
-        canvas.height - currentConfig.deleteZoneSize,
-        currentConfig.deleteZoneSize,
-        currentConfig.deleteZoneSize,
+        canvas.width - config.deleteZoneSize,
+        canvas.height - config.deleteZoneSize,
+        config.deleteZoneSize,
+        config.deleteZoneSize,
       );
 
       ctx.font = isHovered ? "bold 20px sans-serif" : "16px sans-serif";
@@ -131,16 +124,25 @@ export const useCanvas = ({
       ctx.textBaseline = "middle";
       ctx.fillText(
         "🗑️",
-        canvas.width - currentConfig.deleteZoneSize / 2,
-        canvas.height - currentConfig.deleteZoneSize / 2,
+        canvas.width - config.deleteZoneSize / 2,
+        canvas.height - config.deleteZoneSize / 2,
       );
 
-      animationFrameId = requestAnimationFrame(renderLoop);
+      performance.mark("canvas-draw-end");
+      performance.measure(
+        "Canvas Render Time",
+        "canvas-draw-start",
+        "canvas-draw-end",
+      );
+
+      if (fps < 60) {
+        console.warn(`⚠️ Frame rate dropped to: ${fps} FPS`);
+      }
     };
 
-    animationFrameId = requestAnimationFrame(renderLoop);
+    animationFrameId = requestAnimationFrame(renderFrame);
 
     // Prevent memory leaks by cancelling pending animation requests when the component is unmounted.
     return () => cancelAnimationFrame(animationFrameId);
-  }, [canvasRef]);
+  }, [canvasRef, notes, interaction, config, canvasSize]);
 };
