@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import styles from "./CanvasBoard.module.css";
 import type { Note, Interaction, Config, Coordinates } from "../types";
 import {
@@ -17,7 +17,7 @@ import {
   LOCAL_STORAGE_KEY,
 } from "../constants";
 import { useCanvas, useLocalStorage, useWindowResize } from "../hooks";
-import { TextInput } from ".";
+import { TextInput } from "./TextInput";
 
 const CONFIG: Config = {
   resizeHandleSize: RESIZE_HANDLE_SIZE,
@@ -33,10 +33,12 @@ export const CanvasBoard: React.FC = () => {
   */
   const boundsRef = useRef<DOMRect | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [interaction, setInteraction] = useState<Interaction>({ type: "idle" });
   const [saveToLocalStorage, readFromLocalStorage] =
     useLocalStorage<Note[]>(LOCAL_STORAGE_KEY);
+  const [notes, setNotes] = useState<Note[]>(
+    () => readFromLocalStorage() || [],
+  );
+  const [interaction, setInteraction] = useState<Interaction>({ type: "idle" });
 
   const activeEditingNote =
     interaction.type === "editing"
@@ -47,19 +49,6 @@ export const CanvasBoard: React.FC = () => {
 
   // Update canvas pixel dimensions on start and cache bounds.
   useWindowResize({ canvasRef, boundsRef });
-
-  useEffect(() => {
-    const data = readFromLocalStorage();
-    if (data) {
-      setNotes(data);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (interaction.type === "idle") {
-      saveToLocalStorage(notes);
-    }
-  }, [notes, interaction]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (interaction.type === "editing") {
@@ -184,6 +173,7 @@ export const CanvasBoard: React.FC = () => {
 
     switch (interaction.type) {
       case "dragging": {
+        let updatedNotes = notes;
         const shouldDelete = isOverDeleteZone(
           interaction.note,
           canvas.width,
@@ -192,16 +182,18 @@ export const CanvasBoard: React.FC = () => {
         );
 
         if (shouldDelete) {
-          setNotes(notes.filter((n) => n.id !== interaction.note.id));
+          updatedNotes = notes.filter((n) => n.id !== interaction.note.id);
+          setNotes(updatedNotes);
         }
 
         setInteraction({ type: "idle" });
-
+        saveToLocalStorage(updatedNotes);
         break;
       }
 
       case "resizing":
         setInteraction({ type: "idle" });
+        saveToLocalStorage(notes);
         break;
       case "editing":
       case "idle":
@@ -210,8 +202,6 @@ export const CanvasBoard: React.FC = () => {
         assertNever(interaction);
       }
     }
-
-    setInteraction({ type: "idle" });
   };
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -231,8 +221,12 @@ export const CanvasBoard: React.FC = () => {
   };
 
   const handleTextSave = (id: string, newText: string) => {
-    setNotes(notes.map((n) => (n.id === id ? { ...n, text: newText } : n)));
+    const updatedNotes = notes.map((n) =>
+      n.id === id ? { ...n, text: newText } : n,
+    );
+    setNotes(updatedNotes);
     setInteraction({ type: "idle" });
+    saveToLocalStorage(updatedNotes);
   };
 
   const handleMouseLeave = () => {

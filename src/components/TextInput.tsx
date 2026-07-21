@@ -18,6 +18,7 @@ export function TextInput({
 }: TextInputParams) {
   return (
     <input
+      data-testid="note-text-input"
       autoFocus
       type="text"
       defaultValue={note.text || ""}
