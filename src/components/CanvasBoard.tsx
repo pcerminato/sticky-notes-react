@@ -46,7 +46,7 @@ export const CanvasBoard: React.FC = () => {
       ? notes.find((n) => n.id === interaction.noteId)
       : null;
 
-  // Update canvas pixel dimensions on start and cache bounds.
+  // Update canvas pixel dimensions and cache bounds.
   useWindowResize({
     canvasRef,
     boundsRef,

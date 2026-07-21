@@ -1,75 +1,45 @@
-# React + TypeScript + Vite
+# Notes
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Architecture
 
-Currently, two official plugins are available:
+- `CanvasBoard.tsx` is the component that renders the canvas and defines the event handlers over the canvas events. The approach to interact with the canvas relies on an _interactions state machine_ idea, based on different interaction types (`idle`, `dragging`, `resizing` or `editing`) to signal what mode the application is in and to bind the actions accordingly.
+  - `boundsRef`. In order to to maintain ultra-smooth responsiveness during mouse movements, the component uses this mutable React ref to cache the canvas´s physical position in the browser layout.
+  - `<TextInput />`. When on editing mode, the <TextInput> is set directly on top of the active note boundaries.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `useCanvas.tsx` encapsulates all the rendering logic of the canvas. It uses `requestAnimationFrame()` to schedule the renders when there is a change in the state or in the canvas size change.
+  - The approach I used to draw the notes on the canvas is _drawing everything all the time_. Example: even if a single note is begin dragged over the canvas, all the other notes are re-drawn. This is a trade-off I made to keep implementation straigh forward. Still, for an enterprise application a different approach should be taken, like [multi-layered canvas](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas#use_multiple_layered_canvases_for_complex_scenes) or [HTML-in-canvas](https://developer.chrome.com/blog/html-in-canvas-origin-trial).
 
-## React Compiler
+- Other hooks.
+  - `useWindowResize()` to read the `getBoundingClientRect()` only once and to update the DOM reliying on `useLayoutEffect()` to efficiently set up the canvas boundaries on start up.
+  - `useLocalStorage()` to encapsulate the logic related to localStorage interactions.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features implemented
 
-## Expanding the ESLint configuration
+1. Create a new note of the specified size at the specified position.
+2. Change note size by dragging.
+3. Move a note by dragging.
+4. Remove a note by dragging it over a predefined "trash" zone.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Bonus
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. Entering/editing note text.
+2. Moving notes to front (in case of overlapping notes).
+3. Saving notes to local storage (restoring them on page load).
+4. Different note colors.
+5. ~~Saving notes to REST API~~
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Tests
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Added unit test, regression tests (snapshots) and e2e tests. Though the coverage is not exaustive, the basic cases are set up.
 
-```
+## How to run 🚀
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The project is built with vite.
+It uses vitest for unit and snapshot tests -and- playwright for e2e tests.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+- `nvm use` to use Node.js `v24.14.1` defined for this project in .nvmrc.
+- Install dependencies with `npm install`.
+- Run on dev mode with `npm run dev`.
+  - Open the app on http://localhost:5173/ (or check the localhost link in the console).
+- Run unit tests: `npm test`.
+- Run e2e tests: `npm run e2e`.
